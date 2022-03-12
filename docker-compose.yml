@@ -1,0 +1,11 @@
+services:
+  discord-bot:
+    container_name: F1Bot
+    image: openjdk
+    environment:
+      - TOKEN=
+      - GUILDID=
+    volumes:
+      - ./F1Bot.jar:/application.jar
+    command: ["java", "-jar", "application.jar"]
+    restart: unless-stopped
