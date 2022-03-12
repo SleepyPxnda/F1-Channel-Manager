@@ -33,7 +33,7 @@ public class CommandInteractionListener extends ListenerAdapter {
             StringBuilder sb = new StringBuilder();
 
             userList.forEach(user -> {
-                Member member = ev.getGuild().getMemberById(user);
+                Member member = ev.getGuild().retrieveMemberById(user).complete();
 
                 if(member == null){
                     Logger.debug("Cannot find user with id: " + user + " in guild " + ev.getGuild().getName());
