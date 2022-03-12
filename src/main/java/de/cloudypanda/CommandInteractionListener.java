@@ -62,13 +62,13 @@ public class CommandInteractionListener extends ListenerAdapter {
         long channelID = ev.getOption("channel").getAsLong();
 
         if(id > 5 || id < 0) {
-            ev.reply("Id muss zwischen 0 und 5 sein; 0 ist der Meetingroom, 1-5 sind die Cabins")
+            ev.reply("Id muss zwischen 0 und 5 sein; 5 ist der Meetingroom, 0-4 sind die Cabins")
                     .setEphemeral(true)
                     .queue();
             return;
         }
 
-        if(id == 0){
+        if(id == 5){
             F1Bot.meetingChannelId = channelID;
             ev.reply("**" + ev.getGuild().getVoiceChannelById(channelID).getName() + "** ist nun der Meetingchannel" )
                     .setEphemeral(true)
@@ -86,11 +86,11 @@ public class CommandInteractionListener extends ListenerAdapter {
     public void executeAssignCommand(SlashCommandInteractionEvent ev){
         ev.reply("Zuweisungsfenster, durch anklicken der Buttons kannst du dir eine Cabin zuweisen")
                 .addActionRow(
-                        Button.primary("assign_broadcast", "Assign to Broadcast"),
-                        Button.primary("assign_1", "Assign to 1"),
-                        Button.primary("assign_2", "Assign to 2"),
-                        Button.primary("assign_3", "Assign to 3"),
-                        Button.primary("assign_4", "Assign to 4")
+                        Button.primary("assign_broadcast", "Streaming"),
+                        Button.primary("assign_1", "Channel 1"),
+                        Button.primary("assign_2", "Channel 2"),
+                        Button.primary("assign_3", "Channel 3"),
+                        Button.primary("assign_4", "Channel 4")
                 )
                 .queue();
     }
@@ -109,19 +109,19 @@ public class CommandInteractionListener extends ListenerAdapter {
     public void onButtonInteraction(ButtonInteractionEvent event) {
 
         if(event.getComponentId().equals("assign_broadcast")){
-            addUserToMap(event, 1);
+            addUserToMap(event, 0);
         }
         if(event.getComponentId().equals("assign_1")){
-            addUserToMap(event, 2);
+            addUserToMap(event, 1);
         }
         if(event.getComponentId().equals("assign_2")){
-            addUserToMap(event, 3);
+            addUserToMap(event, 2);
         }
         if(event.getComponentId().equals("assign_3")){
-            addUserToMap(event, 4);
+            addUserToMap(event, 3);
         }
         if(event.getComponentId().equals("assign_4")){
-            addUserToMap(event, 5);
+            addUserToMap(event, 4);
         }
 
         if(event.getComponentId().equals("move_cabins")){
@@ -194,6 +194,8 @@ public class CommandInteractionListener extends ListenerAdapter {
         F1Bot.channelMap.forEach((channel, list) ->  list.remove(event.getMember().getIdLong()));
         F1Bot.channelMap.get(channelID).add(event.getMember().getIdLong());
         F1Bot.LOGGER.debug("Key now has " + F1Bot.channelMap.get(channelID).size() + " entries");
-        event.reply( event.getMember().getEffectiveName() + " assigned to id " + mapId).queue();
+        event.reply( event.getMember().getEffectiveName() + " ist nun dem Channel " + event.getGuild().getVoiceChannelById(channelID).getName() + " zugewiesen")
+                .setEphemeral(true)
+                .queue();
     }
 }
