@@ -1,5 +1,5 @@
 services:
-  discord-bot:
+  F1-Bot:
     container_name: F1Bot
     image: openjdk
     environment:
