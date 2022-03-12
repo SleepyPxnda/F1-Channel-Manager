@@ -5,7 +5,6 @@ import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.security.auth.login.LoginException;
@@ -17,18 +16,17 @@ public class F1Bot {
     public static HashMap<Long, List<Long>> channelMap;
     public static long meetingChannelId;
     public static HashMap<Integer, Long> setupMap;
-    public static final Logger LOGGER = LoggerFactory.getLogger(F1Bot.class);
 
     public static void main(String[] args) throws LoginException, InterruptedException {
         String token = System.getenv("TOKEN");
         String guildId = System.getenv("GUILDID");
         if(token.isEmpty()) {
-            F1Bot.LOGGER.error("Cannot start Bot, ENV TOKEN is empty");
+            Logger.error("Cannot start Bot, ENV TOKEN is empty");
             return;
         }
 
         if(guildId.isEmpty()){
-            F1Bot.LOGGER.error("Cannot start Bot, ENV GUILDID is empty");
+            Logger.error("Cannot start Bot, ENV GUILDID is empty");
             return;
         }
         guildID = Long.parseLong(guildId);
@@ -44,7 +42,7 @@ public class F1Bot {
         Guild guild = jda.getGuildById(guildID);
 
         if(guild == null){
-            F1Bot.LOGGER.error("No Guild found, cancelling command adding");
+            Logger.error("No Guild found, cancelling command adding");
             return;
         }
         //Create Commands for Guild Only
@@ -57,8 +55,8 @@ public class F1Bot {
 
         guild.upsertCommand(Commands.slash("list", "Prints a list of all assigned users")).queue();
 
-        guild.retrieveCommands().queue(commands -> commands.forEach(command -> F1Bot.LOGGER.debug("Found registered Command: " + command.getName())));
+        guild.retrieveCommands().queue(commands -> commands.forEach(command -> Logger.debug("Found registered Command: " + command.getName())));
 
-        F1Bot.LOGGER.info("Added commands to Guild: " + guild.getName());
+        Logger.info("Added commands to Guild: " + guild.getName());
     }
 }

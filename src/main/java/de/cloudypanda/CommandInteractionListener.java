@@ -2,6 +2,7 @@ package de.cloudypanda;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.OnlineStatus;
+import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
@@ -35,7 +36,7 @@ public class CommandInteractionListener extends ListenerAdapter {
                 Member member = ev.getGuild().getMemberById(user);
 
                 if(member == null){
-                    F1Bot.LOGGER.debug("Cannot find user with id: " + user + " in guild " + ev.getGuild().getName());
+                    Logger.debug("Cannot find user with id: " + user + " in guild " + ev.getGuild().getName());
                     return;
                 }
 
@@ -61,6 +62,13 @@ public class CommandInteractionListener extends ListenerAdapter {
         int id = ev.getOption("id").getAsInt();
         long channelID = ev.getOption("channel").getAsLong();
 
+        if(ev.getGuild().getGuildChannelById(channelID).getType() != ChannelType.VOICE){
+            ev.reply("Der Channel muss ein Voicechannel sein")
+                    .setEphemeral(true)
+                    .queue();
+            return;
+        }
+
         if(id > 5 || id < 0) {
             ev.reply("Id muss zwischen 0 und 5 sein; 5 ist der Meetingroom, 0-4 sind die Cabins")
                     .setEphemeral(true)
@@ -73,6 +81,7 @@ public class CommandInteractionListener extends ListenerAdapter {
             ev.reply("**" + ev.getGuild().getVoiceChannelById(channelID).getName() + "** ist nun der Meetingchannel" )
                     .setEphemeral(true)
                     .queue();
+            Logger.info("Channel " + ev.getGuild().getVoiceChannelById(channelID).getName() + " set as meeting room");
             return;
         }
 
@@ -80,6 +89,7 @@ public class CommandInteractionListener extends ListenerAdapter {
         ev.reply("ID **" + id + "** wurde auf den Channel **" + ev.getGuild().getVoiceChannelById(channelID).getName() + "** gesetzt")
                 .setEphemeral(true)
                 .queue();
+        Logger.info("Channel " + ev.getGuild().getVoiceChannelById(channelID).getName() + " set as channel for id " + id);
 
     }
 
@@ -138,7 +148,7 @@ public class CommandInteractionListener extends ListenerAdapter {
                     }
 
                     if(member.getVoiceState().inAudioChannel()){
-                        F1Bot.LOGGER.debug("Moving user " + member.getEffectiveName() + " into channel " + event.getGuild().getVoiceChannelById(channelId).getName());
+                        Logger.debug("Moving user " + member.getEffectiveName() + " into channel " + event.getGuild().getVoiceChannelById(channelId).getName());
                         event.getGuild().moveVoiceMember(member, event.getGuild().getVoiceChannelById(channelId)).queue();
                     }
                 });
@@ -154,20 +164,20 @@ public class CommandInteractionListener extends ListenerAdapter {
                     .setEphemeral(true)
                     .queue();
             F1Bot.channelMap.forEach((channelId, userList) -> {
-                F1Bot.LOGGER.debug("Found " + userList.size() + " entries for channel " + channelId);
+                Logger.debug("Found " + userList.size() + " entries for channel " + channelId);
                 userList.forEach(user -> {
                     Member member = event.getGuild().getMemberById(user);
 
                     if(member == null){
-                        F1Bot.LOGGER.error("Cannot find user with id:" + user);
+                        Logger.error("Cannot find user with id:" + user);
                         return;
                     }
 
                     if(!member.getVoiceState().inAudioChannel()){
-                        F1Bot.LOGGER.debug("Skipping " + member.getEffectiveName() + " cause not in vc");
+                        Logger.debug("Skipping " + member.getEffectiveName() + " cause not in vc");
                         return;
                     }
-                    F1Bot.LOGGER.debug("Moving user " + member.getEffectiveName() + " into meetingroom");
+                    Logger.debug("Moving user " + member.getEffectiveName() + " into meetingroom");
                     event.getGuild().moveVoiceMember(member, event.getGuild().getVoiceChannelById(F1Bot.meetingChannelId)).queue();
                 });
             });
@@ -186,14 +196,14 @@ public class CommandInteractionListener extends ListenerAdapter {
         }
 
         if(!F1Bot.channelMap.containsKey(channelID)){
-            F1Bot.LOGGER.debug("No key for vc " + event.getGuild().getVoiceChannelById(channelID).getName());
+            Logger.debug("No key for vc " + event.getGuild().getVoiceChannelById(channelID).getName());
             F1Bot.channelMap.put(channelID, new ArrayList<>());
         }
 
-        F1Bot.LOGGER.debug("Adding member to key: " + event.getGuild().getVoiceChannelById(channelID).getName());
+        Logger.debug("Adding member to key: " + event.getGuild().getVoiceChannelById(channelID).getName());
         F1Bot.channelMap.forEach((channel, list) ->  list.remove(event.getMember().getIdLong()));
         F1Bot.channelMap.get(channelID).add(event.getMember().getIdLong());
-        F1Bot.LOGGER.debug("Key now has " + F1Bot.channelMap.get(channelID).size() + " entries");
+        Logger.debug("Key now has " + F1Bot.channelMap.get(channelID).size() + " entries");
         event.reply( event.getMember().getEffectiveName() + " ist nun dem Channel " + event.getGuild().getVoiceChannelById(channelID).getName() + " zugewiesen")
                 .setEphemeral(true)
                 .queue();
