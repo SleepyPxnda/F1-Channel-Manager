@@ -40,14 +40,7 @@ public class CommandInteractionListener extends ListenerAdapter {
                     return;
                 }
 
-                if(member.getOnlineStatus() == OnlineStatus.OFFLINE){
-                    sb.append("➖ ")
-                            .append(member.getEffectiveName())
-                            .append("\n");
-                    return;
-                }
-
-                sb.append("<:green_plus:793954002789597226> ")
+                sb.append("<:small_green_diamond:923596714449989692> ")
                         .append(member.getEffectiveName())
                         .append("\n");
             });
