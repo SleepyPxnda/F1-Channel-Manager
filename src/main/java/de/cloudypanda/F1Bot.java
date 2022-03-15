@@ -1,5 +1,7 @@
 package de.cloudypanda;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Guild;
@@ -8,6 +10,11 @@ import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import org.slf4j.LoggerFactory;
 
 import javax.security.auth.login.LoginException;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 
@@ -34,6 +41,8 @@ public class F1Bot {
         channelMap = new HashMap<>();
         setupMap = new HashMap<>();
 
+        LoadConfig();
+
         JDA jda = JDABuilder.createDefault(token)
                 .addEventListeners(new CommandInteractionListener())
                 .build()
@@ -59,4 +68,90 @@ public class F1Bot {
 
         Logger.info("Added commands to Guild: " + guild.getName());
     }
+
+
+    public static void LoadConfig() {
+        // Jackson Mapper
+        ObjectMapper mapper = new ObjectMapper();
+
+        try {
+            if(!Files.exists(Paths.get("./config/"))){
+                Files.createDirectory(Paths.get("./config/"));
+                Logger.info("Created config directory!");
+            }
+        } catch (IOException e) {
+            Logger.error(e.getMessage());
+        }
+
+
+        try {
+            File channelFile = new File("./config/channelConfig.json");
+
+            if(channelFile.createNewFile()){
+                Logger.info("Created new file for channelconfig");
+            } else {
+                Logger.info("Found existing channelconfig");
+            }
+
+            // Java object to JSON file
+            channelMap = mapper.readValue(channelFile, new TypeReference<HashMap<Long, List<Long>>>() {});
+
+        } catch (IOException e) {
+            Logger.error(e.getMessage());
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Current Channel Map State: \n" );
+        channelMap.forEach((id, list) -> {
+            sb.append("ID: " + id);
+            sb.append(" Users: ");
+            list.forEach(user -> sb.append(user).append(" ,"));
+            sb.append("\n");
+        });
+        Logger.info(sb.toString());
+
+        try {
+            File setupFile = new File("./config/setupConfig.json");
+
+            if(setupFile.createNewFile()){
+                Logger.info("Created new file for setupconfig");
+            } else {
+                Logger.info("Found existing setupconfig");
+            }
+
+            setupMap = mapper.readValue(setupFile, new TypeReference<HashMap<Integer, Long>>() {});
+        } catch (IOException e) {
+            Logger.error(e.getMessage());
+        }
+
+        StringBuilder sb2 = new StringBuilder();
+        sb2.append("Current Setup Map State: \n");
+        setupMap.forEach((id, channel) ->sb2.append("ID:" + id + ", ChannelID:" + channel));
+        Logger.info(sb2.toString());
+    }
+
+    public static void SafeChannelConfig() {
+        try {
+            // Jackson Mapper
+            ObjectMapper mapper = new ObjectMapper();
+
+            // Java object to JSON file
+            mapper.writeValue(new File("./config/channelConfig.json"), channelMap);
+        } catch (IOException e) {
+            Logger.error(e.getMessage());
+        }
+    }
+
+    public static void SafeSetupConfigs(){
+        try {
+            // Jackson Mapper
+            ObjectMapper mapper = new ObjectMapper();
+
+            // Java object to JSON file
+            mapper.writeValue(new File("./config/setupConfig.json"), setupMap);
+        } catch (IOException e) {
+            Logger.error(e.getMessage());
+        }
+    }
+
 }
