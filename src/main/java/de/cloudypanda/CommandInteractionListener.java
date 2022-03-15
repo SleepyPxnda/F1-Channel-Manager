@@ -84,6 +84,7 @@ public class CommandInteractionListener extends ListenerAdapter {
                 .queue();
         Logger.info("Channel " + ev.getGuild().getVoiceChannelById(channelID).getName() + " set as channel for id " + id);
 
+        F1Bot.SafeSetupConfigs();
     }
 
     public void executeAssignCommand(SlashCommandInteractionEvent ev){
@@ -200,5 +201,7 @@ public class CommandInteractionListener extends ListenerAdapter {
         event.reply( event.getMember().getEffectiveName() + " ist nun dem Channel " + event.getGuild().getVoiceChannelById(channelID).getName() + " zugewiesen")
                 .setEphemeral(true)
                 .queue();
+
+        F1Bot.SafeChannelConfig();
     }
 }
