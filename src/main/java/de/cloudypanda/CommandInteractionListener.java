@@ -25,6 +25,7 @@ public class CommandInteractionListener extends ListenerAdapter {
     }
 
     private void executeListCommand(SlashCommandInteractionEvent ev) {
+        ev.deferReply().queue();
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle("Cabin Zuweisungen");
         eb.setColor(Color.CYAN);
@@ -47,8 +48,7 @@ public class CommandInteractionListener extends ListenerAdapter {
 
             eb.addField(ev.getGuild().getVoiceChannelById(channelId).getName(), sb.toString(), false);
         });
-
-        ev.replyEmbeds(eb.build()).queue();
+        ev.getHook().sendMessageEmbeds(eb.build()).queue();
     }
 
     private void executeSetupCommand(SlashCommandInteractionEvent ev) {
