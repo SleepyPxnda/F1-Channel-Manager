@@ -1,12 +1,19 @@
 package de.cloudypanda;
 
+import de.cloudypanda.model.ChannelEntry;
+
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
 public class ConfigHandler {
 
-    public static HashMap<Long, List<Long>> channelConfig = new HashMap<>();
-    public static HashMap<Integer, Long> channelMapping = new HashMap<>();
+    public static List<ChannelEntry> Entries;
+    public static long meetingChannelId;
+
+    public ConfigHandler() {
+        Entries = new ArrayList<>();
+    }
 
     public void createConfigFile(){
         //ToDo: Create Config File

@@ -18,10 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 
 public class F1Bot {
-    private static Long guildID;
-    public static long meetingChannelId;
-
-    public static void main(String[] args) throws LoginException, InterruptedException {
+    public static void main(String[] args) throws InterruptedException {
         String token = System.getenv("TOKEN");
         String guildId = System.getenv("GUILDID");
 
@@ -36,7 +33,7 @@ public class F1Bot {
             return;
         }
 
-        guildID = Long.parseLong(guildId);
+        Long discordGuildId = Long.parseLong(guildId);
 
         LoadConfig();
 
@@ -45,7 +42,7 @@ public class F1Bot {
                 .build()
                 .awaitReady();
 
-        Guild guild = jda.getGuildById(guildID);
+        Guild guild = jda.getGuildById(discordGuildId);
 
         if(guild == null){
             Logger.error("No Guild found, cancelling command adding");
@@ -53,7 +50,7 @@ public class F1Bot {
         }
 
         //Create Commands for Guild Only
-        guild.upsertCommand(Commands.slash("control", "Prints the controlwindow")).queue();
+        guild.upsertCommand(Commands.slash("control", "Prints the control window")).queue();
         guild.upsertCommand(Commands.slash("map", "Command to setup bot")
                         .addOptions(
                                 new OptionData(OptionType.STRING, "button", "button which will be mapped to the given channel")

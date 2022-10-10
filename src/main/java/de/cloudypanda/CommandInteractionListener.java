@@ -1,7 +1,9 @@
 package de.cloudypanda;
 
+import de.cloudypanda.model.ChannelEntry;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.channel.Channel;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
@@ -12,6 +14,7 @@ import net.dv8tion.jda.api.interactions.components.selections.SelectMenu;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Objects;
 
 public class CommandInteractionListener extends ListenerAdapter {
     @Override
@@ -20,7 +23,7 @@ public class CommandInteractionListener extends ListenerAdapter {
         switch (ev.getName()) {
             case "control" -> executeControlCommand(ev);
             case "assign" -> executeAssignCommand(ev);
-            case "setup" -> executeSetupCommand(ev);
+            case "map" -> executeMapCommand(ev);
             case "list" -> executeListCommand(ev);
         }
     }
@@ -31,66 +34,38 @@ public class CommandInteractionListener extends ListenerAdapter {
         eb.setTitle("Cabin Zuweisungen");
         eb.setColor(Color.CYAN);
 
-        ConfigHandler.channelConfig.forEach((channelId, userList) -> {
-            StringBuilder sb = new StringBuilder();
-
-            userList.forEach(user -> {
-                Member member = ev.getGuild().retrieveMemberById(user).complete();
-
-                if(member == null){
-                    Logger.debug("Cannot find user with id: " + user + " in guild " + ev.getGuild().getName());
-                    return;
-                }
-
-                sb.append("<:small_green_diamond:923596714449989692> ")
-                        .append(member.getEffectiveName())
-                        .append("\n");
-            });
-
-            eb.addField(ev.getGuild().getVoiceChannelById(channelId).getName(), sb.toString(), false);
-        });
-        ev.getHook().sendMessageEmbeds(eb.build()).queue();
+        //ToDo: List all Users and thei're assigned channels
     }
 
-    private void executeSetupCommand(SlashCommandInteractionEvent ev) {
-        int id = ev.getOption("id").getAsInt();
-        long channelID = ev.getOption("channel").getAsLong();
+    private void executeMapCommand(SlashCommandInteractionEvent ev) {
+        String buttonId = ev.getOption("button").getAsString();
+        Channel selectedChannel = ev.getOption("channel").getAsChannel();
 
-        if(ev.getGuild().getGuildChannelById(channelID).getType() == ChannelType.VOICE){
-            ev.reply("Der Channel muss ein Voicechannel sein")
+        if(selectedChannel.getType() != ChannelType.VOICE){
+            ev.reply("The channel has to be a voice-channel.")
                     .setEphemeral(true)
                     .queue();
             return;
         }
 
-        //ToDo: Rework this to work with new context selection
-
-        if(id > 5 || id < 0) {
-            ev.reply("Id muss zwischen 0 und 5 sein; 5 ist der Meetingroom, 0-4 sind die Cabins")
-                    .setEphemeral(true)
+        if(buttonId.equals("cabin_meeting")){
+            ConfigHandler.meetingChannelId = selectedChannel.getIdLong();
+            ev.reply("Successfully mapped " + selectedChannel.getAsMention() + " as the meeting channel")
                     .queue();
-            return;
         }
 
-        if(id == 5){
-            F1Bot.meetingChannelId = channelID;
-            ev.reply("**" + ev.getGuild().getVoiceChannelById(channelID).getName() + "** ist nun der Meetingchannel" )
-                    .setEphemeral(true)
-                    .queue();
-            Logger.info("Channel " + ev.getGuild().getVoiceChannelById(channelID).getName() + " set as meeting room");
-            return;
+        if(!ConfigHandler.Entries.stream().anyMatch(x -> Objects.equals(x.ChannelId, buttonId))){
+            ConfigHandler.Entries.add(new ChannelEntry(buttonId, selectedChannel.getName() , selectedChannel.getIdLong()));
         }
 
-        ConfigHandler.channelMapping.put(id, channelID);
-        ev.reply("ID **" + id + "** wurde auf den Channel **" + ev.getGuild().getVoiceChannelById(channelID).getName() + "** gesetzt")
-                .setEphemeral(true)
+        ev.reply("Successfully mapped " + selectedChannel.getAsMention() + " as the channel for " + buttonId)
                 .queue();
-        Logger.info("Channel " + ev.getGuild().getVoiceChannelById(channelID).getName() + " set as channel for id " + id);
 
         F1Bot.SafeSetupConfigs();
     }
 
     public void executeAssignCommand(SlashCommandInteractionEvent ev){
+
 
         SelectMenu menu = SelectMenu.create("choose-channel")
                 .addOption("Streaming Room", "cabin_streaming")
@@ -101,19 +76,32 @@ public class CommandInteractionListener extends ListenerAdapter {
                 .addOption("Cabin 5","cabin_5")
                 .build();
 
-        ev.reply("Please pick your class below")
-                .setEphemeral(true)
+        ev.reply("Please pick your cabin below")
+                .setEphemeral(false)
                 .addActionRow(menu)
                 .queue();
     }
 
     @Override
-    public void onSelectMenuInteraction(SelectMenuInteractionEvent event) {
-        if (event.getComponentId().equals("choose-channel")) {
-            event.reply("You chose " + event.getValues().get(0))
+    public void onSelectMenuInteraction(SelectMenuInteractionEvent ev) {
+        if (ev.getComponentId().equals("choose-channel")) {
+            Member interactionMember = ev.getMember();
+            String channelId = ev.getValues().get(0);
+            ev.reply("You chose " + channelId)
+                    .setEphemeral(true)
                     .queue();
 
-            //ToDo: Assign user to channel
+            ConfigHandler.Entries
+                    .forEach(x -> x.EntryMembers
+                            .removeIf(y -> y.equals(interactionMember.getIdLong())));
+
+            ConfigHandler.Entries
+                    .stream()
+                    .filter(x -> x.ChannelId.equals(channelId))
+                    .findFirst()
+                    .get()
+                    .EntryMembers
+                    .add(interactionMember.getIdLong());
         }
     }
 
@@ -133,22 +121,6 @@ public class CommandInteractionListener extends ListenerAdapter {
     public void onButtonInteraction(ButtonInteractionEvent event) {
 
         //ToDo: Rework this to work with the selection menus
-
-        if(event.getComponentId().equals("assign_broadcast")){
-            addUserToMap(event, 0);
-        }
-        if(event.getComponentId().equals("assign_1")){
-            addUserToMap(event, 1);
-        }
-        if(event.getComponentId().equals("assign_2")){
-            addUserToMap(event, 2);
-        }
-        if(event.getComponentId().equals("assign_3")){
-            addUserToMap(event, 3);
-        }
-        if(event.getComponentId().equals("assign_4")){
-            addUserToMap(event, 4);
-        }
 
         if(event.getComponentId().equals("move_cabins")){
             event.reply("Alle Nutzer werden nun in die Cabins gemovet!")
@@ -198,32 +170,5 @@ public class CommandInteractionListener extends ListenerAdapter {
                 });
             });
         }
-    }
-
-    private void addUserToMap(ButtonInteractionEvent event, int mapId){
-        long channelID = ConfigHandler.channelMapping.get(mapId);
-        //System.out.println("Starting event for " + event.getGuild().getVoiceChannelById(channelID).getName());
-
-        if(channelID == 0){
-            event.reply("No channel setup for id " + mapId)
-                    .setEphemeral(true)
-                    .queue();
-            return;
-        }
-
-        if(!ConfigHandler.channelConfig.containsKey(channelID)){
-            Logger.debug("No key for vc " + event.getGuild().getVoiceChannelById(channelID).getName());
-            ConfigHandler.channelConfig.put(channelID, new ArrayList<>());
-        }
-
-        Logger.debug("Adding member to key: " + event.getGuild().getVoiceChannelById(channelID).getName());
-        ConfigHandler.channelConfig.forEach((channel, list) ->  list.remove(event.getMember().getIdLong()));
-        ConfigHandler.channelConfig.get(channelID).add(event.getMember().getIdLong());
-        Logger.debug("Key now has " + ConfigHandler.channelConfig.get(channelID).size() + " entries");
-        event.reply( event.getMember().getEffectiveName() + " ist nun dem Channel " + event.getGuild().getVoiceChannelById(channelID).getName() + " zugewiesen")
-                .setEphemeral(true)
-                .queue();
-
-        F1Bot.SafeChannelConfig();
     }
 }
